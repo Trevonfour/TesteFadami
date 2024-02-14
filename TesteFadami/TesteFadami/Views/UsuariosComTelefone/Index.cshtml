@@ -1,0 +1,471 @@
+﻿@{
+    ViewData["Title"] = "Pessoas Cadastradas";
+}
+
+<div class="p-5">
+    <div class="border border-light border-3 rounded">
+        <div class="container">
+            <div class="p-5">
+                <div class="row">
+                    <div class="col-8">
+                        <h6>Pessoas cadastradas</h6>
+                    </div>
+                    <div class="col-4">
+                        <button class="btn btn-sm btn-outline-success novoUsuario">Novo usuario</button>
+                    </div>
+                </div>
+
+                <hr />
+
+                <div class="p-5 rounded shadow-sm" id="divTabela">
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div id="modal" class="modal fade" role="dialog">
+
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"></h6>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" class="form-control form-control-sm usuarioId" />
+                <div class="form-group">
+                    <label>Nome</label>
+                    <input type="text" class="form-control form-control-sm nome" />
+                    <span class="text-danger erroNome d-none"></span>
+                </div>
+
+                <div class="form-group">
+                    <label>Sobrenome</label>
+                    <input type="text" class="form-control form-control-sm sobrenome" />
+                    <span class="text-danger erroSobrenome d-none">Digite o sobrenome</span>
+                </div>
+
+                <div class="form-group">
+                    <label>CPF</label>
+                    <input type="text" class="form-control form-control-sm cpf" maxlength="11" pattern="\d{3}\.\d{3}\.\d{3}-\d{2}" placeholder="000.000.000-00" />
+                    <span class="text-danger erroCPF d-none">Digite o CPF</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="text" class="form-control form-control-sm email" />
+                    <span class="text-danger erroEmail d-none">Digite o email</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Data de Nascimento</label>
+                    <input type="date" class="form-control form-control-sm dataDeNascimento" />
+                    <span class="text-danger erroData de Nascimento d-none">Digite a data de nascimento</span>
+                </div>
+
+                <div class="form-group">
+                    <label>DDD</label>
+                    <input type="text" class="form-control form-control-sm codigoDeArea" maxlength="2" pattern="(\d{2})" placeholder="(00)" />
+                    <span class="text-danger erroCPF d-none">Digite o DDD</span>
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" class="form-control form-control-sm telefone" maxlength="9" pattern="\d{5}-\d{4}" placeholder="00000-0000" />
+                    <span class="text-danger erroTelefone d-none">Digite o numero de telefone</span>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="form-group">
+                    <input type="button" value="Salvar" class="btn btn-sm btn-outline-success btnSalvar" />
+                    <input type="button" value="Cancelar" class="btn btn-sm btn-light" data-bs-dismiss="modal" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            carregarDados();
+        });
+
+        function carregarDados() {
+            $.ajax({
+                url: "UsuariosComTelefone/RetornarTodos",
+                method: "GET",
+                success: function (usuarios) {
+                    montarTabela(usuarios);
+                }
+            });
+        }
+
+        $(".novoUsuario").click(function () {
+            escolherTituloModal("Cadastrar de novo Usuario");
+            limparFormulario();
+            mostrarModal();
+            $('.usuarioId').val(0);
+        });
+
+
+        $(".btnSalvar").click(function () {
+            var usuario = {
+                usuarioId: $('.usuarioId').val(),
+                nome: $('.nome').val(),
+                sobrenome: $('.sobrenome').val(),
+                cpf: $('.cpf').val(),
+                email: $('.email').val(),
+                dataDeNascimento: $('.dataDeNascimento').val(),
+                codigoDeArea: $('.codigoDeArea').val(),
+                telefone: $('.telefone').val()
+            };
+
+            if (validarFormulario(usuario)) {
+
+                if (parseInt(usuario.usuarioId) > 0)
+                    atualizarPessoa(usuario);
+
+                criarUsuario(usuario)
+            }
+        });
+
+        function criarUsuario(usuario) {
+            $.ajax({
+                url: "UsuariosComTelefone/NovoUsuario",
+                method: 'POST',
+                data: {
+                    usuarioComTelefone: usuario
+                },
+                success: function (usuarioCriado) {
+                    $("#modal").modal('hide');
+
+                    carregarDados();
+                    limparFormulario();
+                }
+            });
+        }
+
+        function desativarUsuarioPorId(usuarioId) {
+            $.ajax({
+                url: "UsuariosComTelefone/DesativarUsuario",
+                method: 'POST',
+                data: {
+                    usuarioId: usuarioId
+                },
+                success: function (status) {
+                    if (status) {
+                        alert("Usuario Desativado com sucesso");
+                        carregarDados();
+                    }
+
+                    else
+                        alert(status.mensagem);
+                }
+            })
+        }
+        function obterUsuarioPorId(usuarioId) {
+            $.ajax({
+                url: "UsuariosComTelefone/RetornarPorId",
+                method: 'GET',
+                data: {
+                    usuarioId: usuarioId
+                },
+
+                success: function (usuario) {
+                    mostrarModal();
+                    escolherTituloModal(`Atualizar pessoa ${usuario.NM_NOME}`);
+                    $(".usuarioId").val(usuario.CD_USUARIO);
+                    $(".nome").val(usuario.NM_NOME);
+                    $(".sobrenome").val(usuario.NM_SOBRE_NOME);
+                    $(".cpf").val(usuario.CPF);
+                    $(".codigoDeArea").val(usuario.DDD);
+                    $(".telefone").val(usuario.TELEFONE);
+                    $(".email").val(usuario.EMAIL);
+                    $(".dataDeNascimento").val(usuario.DH_NASCIMENTO);
+                    $(".status").val(usuario.CD_STATUS);
+
+                }
+            })
+        }
+
+
+        function atualizarUsuario(usuario) {
+            $.ajax({
+                url: "UsuariosComTelefone/AtualizarUsuario",
+                method: 'POST',
+                data: {
+                    usuarioComTelefone: usuario
+                },
+                success: function (usuarioAtualizado) {
+                    $("#modal").modal('hide');
+                    var linhaTabela = $(`#${usuarioAtualizado.CD_USUARIO}`);
+                    linhaTabela[0].childNodes[0].innerText = usuarioAtualizado.NM_NOME;
+                    linhaTabela[0].childNodes[1].innerText = usuarioAtualizado.NM_SOBRE_NOME;
+                    linhaTabela[0].childNodes[2].innerText = usuarioAtualizado.CPF;
+                    linhaTabela[0].childNodes[3].innerText = usuarioAtualizado.DDD;
+                    linhaTabela[0].childNodes[4].innerText = usuarioAtualizado.TELEFONE;
+                    linhaTabela[0].childNodes[5].innerText = usuarioAtualizado.EMAIL;
+                    linhaTabela[0].childNodes[6].innerText = usuarioAtualizado.DH_NASCIMENTO;
+                    linhaTabela[0].childNodes[7].innerText = usuarioAtualizado.CD_STATUS;
+
+                    limparFormulario();
+                }
+            });
+        }
+
+        function excluirUsuario(usuarioId) {
+            $.ajax({
+                url: "UsuariosComTelefone/ExcluirUsuario",
+                method: 'POST',
+                data: {
+                    usuarioId: usuarioId
+                },
+                success: function (status) {
+                    if (status) {
+                        alert("Pessoa excluída com sucesso");
+                        document.getElementById(CD_USUARIO).remove();
+                    }
+
+                    else
+                        alert(status.mensagem);
+                }
+            })
+        }
+        function montarTabela(usuarios) {
+            var indice = 0;
+            var divTabela = document.getElementById("divTabela");
+            var tabela = '<table class="table table-sm table-hover table-striped tabela">';
+            tabela += '<thead>';
+            tabela += '<tr>';
+            tabela += '<th>Nome</th>';
+            tabela += '<th>Sobrenome</th>';
+            tabela += '<th>CPF</th>';
+            tabela += '<th>DDD</th>';
+            tabela += '<th>Telefone</th>';
+            tabela += '<th>Email</th>';
+            tabela += '<th>Data de nascimento</th>';
+            tabela += '<th>Status</th>';
+            tabela += '<th>Ações</th>';
+            tabela += '</tr>';
+            tabela += '</thead>';
+            tabela += '<tbody>';
+
+            for (indice = 0; indice < usuarios.length; indice++) {
+                var dataNascimento = new Date(usuarios[indice].DH_NASCIMENTO);
+                var dataFormatada = dataNascimento.toLocaleDateString('pt-BR');
+
+                tabela += `<tr id="${usuarios[indice].CD_USUARIO}">`;
+                tabela += `<td>${usuarios[indice].NM_NOME}</td>`;
+                tabela += `<td>${usuarios[indice].NM_SOBRE_NOME}</td>`;
+                tabela += `<td>${usuarios[indice].CPF}</td>`;
+                tabela += `<td>${usuarios[indice].DDD}</td>`;
+                tabela += `<td>${usuarios[indice].TELEFONE}</td>`;
+                tabela += `<td>${usuarios[indice].EMAIL}</td>`;
+                tabela += `<td>${dataFormatada}</td>`;
+                tabela += `<td>${usuarios[indice].CD_STATUS}</td>`;
+                tabela += `<td><button class="btn btn-sm btn-outline-info" onclick="obterUsuarioPorId(${usuarios[indice].CD_USUARIO})">Atualizar</button> |
+                               <button class="btn btn-sm btn-outline-danger" onclick="desativarUsuarioPorId(${usuarios[indice].CD_USUARIO})">Desativar</button> |
+                               <button class="btn btn-sm btn-outline-danger" onclick="excluirUsuario(${usuarios[indice].CD_USUARIO})">Excluir</button></td>`;
+                tabela += '</tr>';
+            }
+
+            tabela += '</tbody>';
+            tabela += '</table>';
+
+            divTabela.innerHTML = tabela;
+        }
+        function validarFormulario(usuario) {
+            let nomeValido = validarNome(usuario.nome, ".nome", ".erroNome");
+            let sobrenomeValido = validarNome(usuario.sobrenome, ".sobrenome", ".erroSobrenome");
+            let cpfValido = validarCPF(usuario.cpf, ".cpf", ".erroCPF");
+            let emailValido = validarEmail(usuario.email, ".email", ".erroEmail");
+            let dataDeNascimentoValida = validarDataDeNascimento(usuario.dataDeNascimento, ".dataDeNascimento", ".erroDataDeNascimento");
+            let codigoDeAreaValido = validarCodigoDeArea(usuario.codigoDeArea, ".codigoDeArea", ".erroCodigoDeArea");
+            let telefoneValido = validarTelefone(usuario.telefone, ".telefone", ".erroTelefone");
+
+            return nomeValido && sobrenomeValido && cpfValido && emailValido && dataDeNascimentoValida && codigoDeAreaValido && telefoneValido;
+        }
+
+        function validarNome(nome, campo, mensagemErro) {
+            let nomeValido = true;
+
+            if (nome.trim() == '' || nome == undefined) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Preencha o nome");
+                $(mensagemErro).removeClass("d-none");
+                nomeValido = false;
+            }
+            else if (nome.length > 20) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Use menos caracteres");
+                $(mensagemErro).removeClass("d-none");
+                nomeValido = false;
+            }
+            else {
+                $(campo).removeClass('is-invalid');
+                $(campo).addClass('is-valid');
+                $(mensagemErro).addClass("d-none");
+                nomeValido = true;
+            }
+
+            return nomeValido;
+        }
+
+        function validarCPF(cpf, campo, mensagemErro) {
+            let cpfValido = true;
+
+            if (cpf.trim() == '' || cpf == undefined) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Preencha o CPF");
+                $(mensagemErro).removeClass("d-none");
+                cpfValido = false;
+            }
+            else if (cpf.length > 11) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Use menos caracteres");
+                $(mensagemErro).removeClass("d-none");
+                cpfValido = false;
+            }
+            else {
+                $(campo).removeClass('is-invalid');
+                $(campo).addClass('is-valid');
+                $(mensagemErro).addClass("d-none");
+                cpfValido = true;
+            }
+
+            return cpfValido;
+        }
+
+        function validarEmail(email, campo, mensagemErro) {
+            let emailValido = true;
+
+            if (email.trim() == '' || email == undefined) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Preencha o email");
+                $(mensagemErro).removeClass("d-none");
+                emailValido = false;
+            }
+            else if (email.length > 100) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Use menos caracteres");
+                $(mensagemErro).removeClass("d-none");
+                emailValido = false;
+            }
+            else {
+                $(campo).removeClass('is-invalid');
+                $(campo).addClass('is-valid');
+                $(mensagemErro).addClass("d-none");
+                emailValido = true;
+            }
+
+            return emailValido;
+        }
+
+        function validarDataDeNascimento(dataDeNascimento, campo, mensagemErro) {
+            let dataDeNascimentoValida = true;
+
+            if (dataDeNascimento.trim() == '' || dataDeNascimento == undefined) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Preencha a Data de Nascimento");
+                $(mensagemErro).removeClass("d-none");
+                dataDeNascimentoValida = false;
+            }
+            else {
+                let data = new Date(dataDeNascimento);
+                if (isNaN(data.getTime())) {
+                    $(campo).addClass('is-invalid');
+                    $(mensagemErro).text("Data de Nascimento inválida");
+                    $(mensagemErro).removeClass("d-none");
+                    dataDeNascimentoValida = false;
+                } else {
+                    $(campo).removeClass('is-invalid');
+                    $(campo).addClass('is-valid');
+                    $(mensagemErro).addClass("d-none");
+                    dataDeNascimentoValida = true;
+                }
+            }
+
+            return dataDeNascimentoValida;
+        }
+
+        function validarCodigoDeArea(codigoDeArea, campo, mensagemErro) {
+            let codigoDeAreaValido = true;
+
+            if (codigoDeArea.trim() == '' || codigoDeArea == undefined) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Preencha o DDD");
+                $(mensagemErro).removeClass("d-none");
+                codigoDeAreaValido = false;
+            }
+            else if (codigoDeArea.length > 2) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Use menos caracteres");
+                $(mensagemErro).removeClass("d-none");
+                codigoDeAreaValido = false;
+            }
+            else {
+                $(campo).removeClass('is-invalid');
+                $(campo).addClass('is-valid');
+                $(mensagemErro).addClass("d-none");
+                codigoDeAreaValido = true;
+            }
+
+            return codigoDeAreaValido;
+        }
+
+        function validarTelefone(telefone, campo, mensagemErro) {
+            let telefoneValido = true;
+
+            if (telefone.trim() == '' || telefone == undefined) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Preencha o telefone");
+                $(mensagemErro).removeClass("d-none");
+                telefoneValido = false;
+            }
+            else if (telefone.length > 9) {
+                $(campo).addClass('is-invalid');
+                $(mensagemErro).text("Use menos caracteres");
+                $(mensagemErro).removeClass("d-none");
+                telefoneValido = false;
+            }
+            else {
+                $(campo).removeClass('is-invalid');
+                $(campo).addClass('is-valid');
+                $(mensagemErro).addClass("d-none");
+                telefoneValido = true;
+            }
+
+            return telefoneValido;
+        }
+
+        function mostrarModal() {
+            new bootstrap.Modal($("#modal"), {}).show();
+        }
+
+        function limparFormulario() {
+            $(".nome").val('');
+            $(".nome").removeClass('is-valid');
+            $(".sobrenome").val('');
+            $(".sobrenome").removeClass('is-valid');
+            $(".cpf").val('');
+            $(".cpf").removeClass('is-valid');
+            $(".email").val('');
+            $(".email").removeClass('is-valid');
+            $(".dataDeNascimento").val('');
+            $(".dataDeNascimento").removeClass('is-valid');
+            $(".codigoDeArea").val('');
+            $(".codigoDeArea").removeClass('is-valid');
+            $(".telefone").val('');
+            $(".telefone").removeClass('is-valid');
+        }
+
+        function escolherTituloModal(texto) {
+            $(".modal-title").text(texto);
+        }
+    </script>
+}
