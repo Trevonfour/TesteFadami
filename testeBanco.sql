@@ -33,27 +33,27 @@ CREATE PROCEDURE INSERIR_USUARIO_E_TELEFONE
     @TELEFONE VARCHAR(9)
 AS
 BEGIN
-    -- Verifica se o usu·rio tem pelo menos 18 anos
+    -- Verifica se o usu√°rio tem pelo menos 18 anos
     IF DATEDIFF(YEAR, @DH_NASCIMENTO, GETDATE()) < 18
     BEGIN
-        PRINT 'Usu·rio deve ter pelo menos 18 anos.';
+        PRINT 'Usu√°rio deve ter pelo menos 18 anos.';
         RETURN;
     END
     
-    -- Verifica se o CPF j· est· cadastrado
+    -- Verifica se o CPF j√° est√° cadastrado
     IF EXISTS (SELECT 1 FROM USUARIO WHERE CPF = @CPF)
     BEGIN
-        PRINT 'CPF j· cadastrado.';
+        PRINT 'CPF j√° cadastrado.';
         RETURN;
     END
 
-    -- Inserindo o novo usu·rio
+    -- Inserindo o novo usu√°rio
     INSERT INTO USUARIO (NM_NOME, NM_SOBRE_NOME, CPF, EMAIL, DH_NASCIMENTO, CD_STATUS)
     VALUES (@NM_NOME, @NM_SOBRE_NOME, @CPF, @EMAIL, @DH_NASCIMENTO, 1);
 
-    -- Inserindo o telefone do usu·rio
+    -- Inserindo o telefone do usu√°rio
     DECLARE @IDUsuario INT;
-    SET @IDUsuario = SCOPE_IDENTITY(); -- ObtÈm o ID do usu·rio inserido
+    SET @IDUsuario = SCOPE_IDENTITY(); -- Obt√©m o ID do usu√°rio inserido
 
     INSERT INTO USUARIO_TELEFONE (CD_USUARIO, DDD, TELEFONE, CD_STATUS)
     VALUES (@IDUsuario, @DDD, @TELEFONE, 1);
@@ -63,14 +63,9 @@ END;
 CREATE PROCEDURE CONSULTAR_TODOS_USUARIOS_COM_TELEFONE
 	AS
 BEGIN 
-
-	IF EXISTS (SELECT 1 FROM USUARIO WHERE CD_STATUS = 0)
-	BEGIN
-		RETURN;
-	END
-
+	
 	SELECT US.CD_USUARIO, NM_NOME, NM_SOBRE_NOME, CPF, DDD, TELEFONE, EMAIL, DH_NASCIMENTO, US.CD_STATUS FROM USUARIO AS US
-	INNER JOIN USUARIO_TELEFONE AS UT ON UT.CD_USUARIO = US.CD_USUARIO;
+	INNER JOIN USUARIO_TELEFONE AS UT ON UT.CD_USUARIO = US.CD_USUARIO WHERE CD_STATUS = 1;
 END;
 
 
@@ -81,14 +76,9 @@ AS
 
 BEGIN 
 
-	IF EXISTS (SELECT 1 FROM USUARIO WHERE CD_STATUS = 0)
-	BEGIN
-		RETURN;
-	END
-
 	SELECT US.CD_USUARIO, NM_NOME, NM_SOBRE_NOME, CPF, DDD, TELEFONE, EMAIL, DH_NASCIMENTO, US.CD_STATUS FROM USUARIO AS US
 	INNER JOIN USUARIO_TELEFONE AS UT ON UT.CD_USUARIO = @CD_USUARIO
-	WHERE US.CD_USUARIO = @CD_USUARIO
+	WHERE US.CD_USUARIO = @CD_USUARIO;
 END;
 
 
