@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using NuGet.Protocol;
 using NuGet.Protocol.Plugins;
@@ -47,7 +47,7 @@ namespace TesteFadami.Controllers
             {
                 try
                 {
-                    string insercaoQuery = "exec INSERIR_USUARIO_E_TELEFONE @NM_NOME, @NM_SOBRE_NOME, @CPF, @EMAIL, @DH_NASCIMENTO, @DDD, @TELEFONE;";
+                    string insercaoQuery = "exec INSERIR_USUARIO @NM_NOME, @NM_SOBRE_NOME, @CPF, @EMAIL, @DH_NASCIMENTO;";
 
                     using (IDbConnection connection = new SqlConnection(connectionString))
                     {
@@ -59,8 +59,6 @@ namespace TesteFadami.Controllers
                             CPF = usuarioComTelefone.Cpf,
                             EMAIL = usuarioComTelefone.Email,
                             DH_NASCIMENTO = usuarioComTelefone.DataDeNascimento,
-                            DDD = usuarioComTelefone.CodigoDeArea,
-                            TELEFONE = usuarioComTelefone.Telefone
                         };
 
                         var result = connection.Query(insercaoQuery, parametros);
@@ -106,7 +104,7 @@ namespace TesteFadami.Controllers
             {
                 try
                 {
-                    string insercaoQuery = "exec ATUALIZAR_USUARIO @CD_USUARIO, @NM_NOME, @NM_SOBRE_NOME, @CPF, @EMAIL, @DH_NASCIMENTO, @DDD, @TELEFONE;";
+                    string insercaoQuery = "exec ATUALIZAR_USUARIO @CD_USUARIO, @NM_NOME, @NM_SOBRE_NOME, @CPF, @EMAIL, @DH_NASCIMENTO;";
 
                     using (IDbConnection connection = new SqlConnection(connectionString))
                     {
@@ -118,7 +116,36 @@ namespace TesteFadami.Controllers
                             NM_SOBRE_NOME = usuarioComTelefone.Sobrenome,
                             CPF = usuarioComTelefone.Cpf,
                             EMAIL = usuarioComTelefone.Email,
-                            DH_NASCIMENTO = usuarioComTelefone.DataDeNascimento,
+                            DH_NASCIMENTO = usuarioComTelefone.DataDeNascimento
+                        };
+
+                        var result = connection.Query(insercaoQuery, parametros);
+                        return Json(result);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest("Ocorreu um erro ao criar o usuário: " + ex.Message);
+                }
+            }
+            return BadRequest(ModelState);
+        }
+
+         [HttpPost]
+        public IActionResult CadastrarTelefone(UsuariosComTelefone usuarioComTelefone)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    string insercaoQuery = "exec ATUALIZAR_TELEFONE @CD_USUARIO, @DDD, @TELEFONE;";
+
+                    using (IDbConnection connection = new SqlConnection(connectionString))
+                    {
+                        connection.Open();
+                        var parametros = new
+                        {
+                            CD_USUARIO = usuarioComTelefone.UsuarioId,
                             DDD = usuarioComTelefone.CodigoDeArea,
                             TELEFONE = usuarioComTelefone.Telefone
                         };
