@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Pessoas Cadastradas";
 }
 
@@ -26,7 +26,7 @@
 </div>
 </div>
 
-<div id="modal" class="modal fade" role="dialog">
+<div id="modalUsuario" class="modal fade" role="dialog">
 
     <div class="modal-dialog">
         <div class="modal-content">
@@ -63,18 +63,7 @@
                 <div class="form-group">
                     <label>Data de Nascimento</label>
                     <input type="date" class="form-control form-control-sm dataDeNascimento" />
-                    <span class="text-danger erroData de Nascimento d-none">Digite a data de nascimento</span>
-                </div>
-
-                <div class="form-group">
-                    <label>DDD</label>
-                    <input type="text" class="form-control form-control-sm codigoDeArea" maxlength="2" pattern="(\d{2})" placeholder="(00)" />
-                    <span class="text-danger erroCPF d-none">Digite o DDD</span>
-                </div>
-                <div class="form-group">
-                    <label>Telefone</label>
-                    <input type="text" class="form-control form-control-sm telefone" maxlength="9" pattern="\d{5}-\d{4}" placeholder="00000-0000" />
-                    <span class="text-danger erroTelefone d-none">Digite o numero de telefone</span>
+                    <span class="text-danger erroDataDeNascimento d-none">Digite a data de nascimento</span>
                 </div>
             </div>
 
@@ -89,13 +78,72 @@
 
 </div>
 
+<div id="modalTelefone" class="modal fade" role="dialog">
+
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"></h6>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" class="form-control form-control-sm usuarioId" />
+                <div class="form-group">
+                    <label>DDD</label>
+                    <input type="text" class="form-control form-control-sm codigoDeArea" maxlength="2" pattern="(\d{2})" placeholder="(00)" />
+                    <span class="text-danger erroCPF d-none">Digite o DDD</span>
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" class="form-control form-control-sm telefone" maxlength="9" pattern="\d{5}-\d{4}" placeholder="00000-0000" />
+                    <span class="text-danger erroTelefone d-none">Digite o numero de telefone</span>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="form-group">
+                    <input type="button" value="SalvarTelefone" class="btn btn-sm btn-outline-success btnSalvarTelefone" />
+                    <input type="button" value="Cancelar" class="btn btn-sm btn-light" data-bs-dismiss="modal" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div id="modalExcluir" class="modal fade" role="dialog">
+
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"></h6>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" class="form-control form-control-sm usuarioId" />
+                <div class="form-group">
+                        <h3>Tem certeza que deseja excluir?</h3>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="form-group">
+                    <input type="button" value="Confirmar" class="btn btn-sm btn-outline-success btnConfirmar" />
+                    <input type="button" value="Cancelar" class="btn btn-sm btn-light" data-bs-dismiss="modal" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
 @section scripts {
     <script>
         $(document).ready(function () {
             carregarDados();
         });
 
-        function carregarDados() {
+         function carregarDados() {
             $.ajax({
                 url: "UsuariosComTelefone/RetornarTodos",
                 method: "GET",
@@ -108,7 +156,7 @@
         $(".novoUsuario").click(function () {
             escolherTituloModal("Cadastrar de novo Usuario");
             limparFormulario();
-            mostrarModal();
+            mostrarModalUsuario();
             $('.usuarioId').val(0);
         });
 
@@ -128,7 +176,7 @@
             if (validarFormulario(usuario)) {
 
                 if (parseInt(usuario.usuarioId) > 0)
-                    atualizarPessoa(usuario);
+                    atualizarUsuario(usuario);
 
                 criarUsuario(usuario)
             }
@@ -142,7 +190,31 @@
                     usuarioComTelefone: usuario
                 },
                 success: function (usuarioCriado) {
-                    $("#modal").modal('hide');
+                    $("#modalUsuario").modal('hide');
+
+                    carregarDados();
+                    limparFormulario();
+                }
+            });
+        }
+
+        $(".btnSalvarTelefone").click(function () {
+            var telefone = {
+                usuarioId: $('.usuarioId').val(),
+                codigoDeArea: $('.codigoDeArea').val(),
+                telefone: $('.telefone').val()
+            };
+                cadastrarTelefone(telefone)
+        });
+        function cadastrarTelefone(telefone) {
+            $.ajax({
+                url: "UsuariosComTelefone/CadastrarTelefone",
+                method: 'POST',
+                data: {
+                    usuarioComTelefone: telefone
+                },
+                success: function (telefoneCadastrado) {
+                    $("#modalTelefone").modal('hide');
 
                     carregarDados();
                     limparFormulario();
@@ -166,7 +238,7 @@
                     else
                         alert(status.mensagem);
                 }
-            })
+            });
         }
         function obterUsuarioPorId(usuarioId) {
             $.ajax({
@@ -177,8 +249,32 @@
                 },
 
                 success: function (usuario) {
-                    mostrarModal();
-                    escolherTituloModal(`Atualizar pessoa ${usuario.NM_NOME}`);
+                    mostrarModalUsuario();
+                    escolherTituloModal(`Atualizar usuario ${usuario.NM_NOME}`);
+                    $(".usuarioId").val(usuario.CD_USUARIO);
+                    $(".nome").val(usuario.NM_NOME);
+                    $(".sobrenome").val(usuario.NM_SOBRE_NOME);
+                    $(".cpf").val(usuario.CPF);
+                    $(".codigoDeArea").val(usuario.DDD);
+                    $(".telefone").val(usuario.TELEFONE);
+                    $(".email").val(usuario.EMAIL);
+                    $(".dataDeNascimento").val(usuario.DH_NASCIMENTO);
+                    $(".status").val(usuario.CD_STATUS);
+                }
+            });
+        }
+
+        function obterTelefonePorId(usuarioId) {
+            $.ajax({
+                url: "UsuariosComTelefone/RetornarPorId",
+                method: 'GET',
+                data: {
+                    usuarioId: usuarioId
+                },
+
+                success: function (usuario) {
+                    mostrarModalTelefone();
+                    escolherTituloModal(`Atualizar Telefone do ${usuario.NM_NOME}`);
                     $(".usuarioId").val(usuario.CD_USUARIO);
                     $(".nome").val(usuario.NM_NOME);
                     $(".sobrenome").val(usuario.NM_SOBRE_NOME);
@@ -189,8 +285,9 @@
                     $(".dataDeNascimento").val(usuario.DH_NASCIMENTO);
                     $(".status").val(usuario.CD_STATUS);
 
+                    atualizarUsuario(usuario);
                 }
-            })
+            });
         }
 
 
@@ -202,16 +299,13 @@
                     usuarioComTelefone: usuario
                 },
                 success: function (usuarioAtualizado) {
-                    $("#modal").modal('hide');
+                    $("#modalUsuario").modal('hide');
                     var linhaTabela = $(`#${usuarioAtualizado.CD_USUARIO}`);
                     linhaTabela[0].childNodes[0].innerText = usuarioAtualizado.NM_NOME;
                     linhaTabela[0].childNodes[1].innerText = usuarioAtualizado.NM_SOBRE_NOME;
                     linhaTabela[0].childNodes[2].innerText = usuarioAtualizado.CPF;
-                    linhaTabela[0].childNodes[3].innerText = usuarioAtualizado.DDD;
-                    linhaTabela[0].childNodes[4].innerText = usuarioAtualizado.TELEFONE;
-                    linhaTabela[0].childNodes[5].innerText = usuarioAtualizado.EMAIL;
-                    linhaTabela[0].childNodes[6].innerText = usuarioAtualizado.DH_NASCIMENTO;
-                    linhaTabela[0].childNodes[7].innerText = usuarioAtualizado.CD_STATUS;
+                    linhaTabela[0].childNodes[3].innerText = usuarioAtualizado.EMAIL;
+                    linhaTabela[0].childNodes[4].innerText = usuarioAtualizado.DH_NASCIMENTO;
 
                     limparFormulario();
                 }
@@ -219,6 +313,10 @@
         }
 
         function excluirUsuario(usuarioId) {
+            escolherTituloModal(``);
+            mostrarModalExcluir();
+            $(".btnConfirmar").click(function () {
+            $("#modalExcluir").modal('hide');
             $.ajax({
                 url: "UsuariosComTelefone/ExcluirUsuario",
                 method: 'POST',
@@ -229,13 +327,18 @@
                     if (status) {
                         alert("Pessoa excluída com sucesso");
                         document.getElementById(CD_USUARIO).remove();
+
                     }
 
                     else
                         alert(status.mensagem);
                 }
-            })
+            });
+            carregarDados();
+        });
         }
+
+
         function montarTabela(usuarios) {
             var indice = 0;
             var divTabela = document.getElementById("divTabela");
@@ -269,6 +372,7 @@
                 tabela += `<td>${dataFormatada}</td>`;
                 tabela += `<td>${usuarios[indice].CD_STATUS}</td>`;
                 tabela += `<td><button class="btn btn-sm btn-outline-info" onclick="obterUsuarioPorId(${usuarios[indice].CD_USUARIO})">Atualizar</button> |
+                               <button class="btn btn-sm btn-outline-info" onclick="obterTelefonePorId(${usuarios[indice].CD_USUARIO})">Detalhes</button> |
                                <button class="btn btn-sm btn-outline-danger" onclick="desativarUsuarioPorId(${usuarios[indice].CD_USUARIO})">Desativar</button> |
                                <button class="btn btn-sm btn-outline-danger" onclick="excluirUsuario(${usuarios[indice].CD_USUARIO})">Excluir</button></td>`;
                 tabela += '</tr>';
@@ -285,10 +389,8 @@
             let cpfValido = validarCPF(usuario.cpf, ".cpf", ".erroCPF");
             let emailValido = validarEmail(usuario.email, ".email", ".erroEmail");
             let dataDeNascimentoValida = validarDataDeNascimento(usuario.dataDeNascimento, ".dataDeNascimento", ".erroDataDeNascimento");
-            let codigoDeAreaValido = validarCodigoDeArea(usuario.codigoDeArea, ".codigoDeArea", ".erroCodigoDeArea");
-            let telefoneValido = validarTelefone(usuario.telefone, ".telefone", ".erroTelefone");
 
-            return nomeValido && sobrenomeValido && cpfValido && emailValido && dataDeNascimentoValida && codigoDeAreaValido && telefoneValido;
+            return nomeValido && sobrenomeValido && cpfValido && emailValido && dataDeNascimentoValida;
         }
 
         function validarNome(nome, campo, mensagemErro) {
@@ -393,58 +495,16 @@
             return dataDeNascimentoValida;
         }
 
-        function validarCodigoDeArea(codigoDeArea, campo, mensagemErro) {
-            let codigoDeAreaValido = true;
-
-            if (codigoDeArea.trim() == '' || codigoDeArea == undefined) {
-                $(campo).addClass('is-invalid');
-                $(mensagemErro).text("Preencha o DDD");
-                $(mensagemErro).removeClass("d-none");
-                codigoDeAreaValido = false;
-            }
-            else if (codigoDeArea.length > 2) {
-                $(campo).addClass('is-invalid');
-                $(mensagemErro).text("Use menos caracteres");
-                $(mensagemErro).removeClass("d-none");
-                codigoDeAreaValido = false;
-            }
-            else {
-                $(campo).removeClass('is-invalid');
-                $(campo).addClass('is-valid');
-                $(mensagemErro).addClass("d-none");
-                codigoDeAreaValido = true;
-            }
-
-            return codigoDeAreaValido;
+        function mostrarModalUsuario() {
+            new bootstrap.Modal($("#modalUsuario"), {}).show();
         }
 
-        function validarTelefone(telefone, campo, mensagemErro) {
-            let telefoneValido = true;
-
-            if (telefone.trim() == '' || telefone == undefined) {
-                $(campo).addClass('is-invalid');
-                $(mensagemErro).text("Preencha o telefone");
-                $(mensagemErro).removeClass("d-none");
-                telefoneValido = false;
-            }
-            else if (telefone.length > 9) {
-                $(campo).addClass('is-invalid');
-                $(mensagemErro).text("Use menos caracteres");
-                $(mensagemErro).removeClass("d-none");
-                telefoneValido = false;
-            }
-            else {
-                $(campo).removeClass('is-invalid');
-                $(campo).addClass('is-valid');
-                $(mensagemErro).addClass("d-none");
-                telefoneValido = true;
-            }
-
-            return telefoneValido;
+        function mostrarModalTelefone() {
+            new bootstrap.Modal($("#modalTelefone"), {}).show();
         }
 
-        function mostrarModal() {
-            new bootstrap.Modal($("#modal"), {}).show();
+        function mostrarModalExcluir() {
+            new bootstrap.Modal($("#modalExcluir"), {}).show();
         }
 
         function limparFormulario() {
@@ -459,9 +519,7 @@
             $(".dataDeNascimento").val('');
             $(".dataDeNascimento").removeClass('is-valid');
             $(".codigoDeArea").val('');
-            $(".codigoDeArea").removeClass('is-valid');
             $(".telefone").val('');
-            $(".telefone").removeClass('is-valid');
         }
 
         function escolherTituloModal(texto) {
